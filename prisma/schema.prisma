@@ -1,0 +1,393 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  TRANSFER
+  APPROVAL
+  CONTRACT_EXECUTION
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum TransactionCategory {
+  OPERATIONS
+  PAYROLL
+  RESERVE
+  INVESTMENT
+  REVENUE
+  OTHER
+}
+
+enum RuleType {
+  LOW_BALANCE
+  LARGE_TRANSACTION
+  SCHEDULED_TRANSFER
+  EXCESS_BALANCE
+  INCOMING_PAYMENT
+}
+
+enum ExecutionMode {
+  RECOMMEND
+  REQUIRE_APPROVAL
+  AUTOMATIC
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  EXECUTED
+  FAILED
+}
+
+enum InsightType {
+  TREASURY_HEALTH
+  ANOMALY
+  BALANCE
+  SPENDING
+  PERFORMANCE
+  SECURITY
+}
+
+enum InsightSeverity {
+  INFO
+  WARNING
+  CRITICAL
+  SUCCESS
+}
+
+enum RecommendationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  EXECUTED
+}
+
+enum AgentMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum AgentActionType {
+  ANALYZE
+  NOTIFY
+  RECOMMEND
+  TRANSFER
+  CREATE_APPROVAL
+}
+
+enum AgentActionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REJECTED
+}
+
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  avatarUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wallets       Wallet[]
+  treasuries    Treasury[]
+  agentMessages AgentMessage[]
+}
+
+
+model Wallet {
+  id String @id @default(cuid())
+
+  address String @unique
+  chainId Int
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isPrimary Boolean @default(false)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  treasuries Treasury[]
+}
+
+
+model Treasury {
+  id String @id @default(cuid())
+
+  name String @default("My Treasury")
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id])
+
+  contractAddress String?
+  chainId         Int
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assets           TreasuryAsset[]
+  transactions     Transaction[]
+  rules            Rule[]
+  approvals        Approval[]
+  insights         AgentInsight[]
+  recommendations  AgentRecommendation[]
+  snapshots        TreasurySnapshot[]
+  agentActions     AgentAction[]
+  agentMessages    AgentMessage[]
+}
+
+
+model TreasuryAsset {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  tokenAddress String
+  symbol       String
+  name         String?
+  decimals     Int
+
+  balance  Decimal @db.Decimal(30, 18)
+  priceUsd Decimal @db.Decimal(30, 8)
+  valueUsd Decimal @db.Decimal(30, 8)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([treasuryId, tokenAddress])
+}
+
+
+model Transaction {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  txHash String @unique
+
+  chainId Int
+
+  type TransactionType
+
+  tokenAddress String
+  tokenSymbol  String?
+
+  amount  Decimal  @db.Decimal(30, 18)
+  valueUsd Decimal? @db.Decimal(30, 8)
+
+  fromAddress String
+  toAddress   String
+
+  status TransactionStatus
+
+  blockNumber String?
+  timestamp   DateTime
+
+  category TransactionCategory?
+
+  createdAt DateTime @default(now())
+
+  @@index([treasuryId])
+  @@index([timestamp])
+}
+
+
+model Rule {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  type RuleType
+
+  condition Json
+  action    Json
+
+  isActive Boolean @default(true)
+
+  executionMode ExecutionMode
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agentActions AgentAction[]
+}
+
+
+model Approval {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  actionType String
+
+  tokenAddress String?
+  tokenSymbol  String?
+
+  amount Decimal? @db.Decimal(30, 18)
+
+  recipientAddress String?
+
+  reason String?
+
+  status ApprovalStatus @default(PENDING)
+
+  expiresAt DateTime?
+
+  approvedAt DateTime?
+  rejectedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model AgentInsight {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+
+  type     InsightType
+  severity InsightSeverity @default(INFO)
+
+  metadata Json?
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([treasuryId])
+}
+
+
+model AgentRecommendation {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+
+  actionType String
+
+  amount Decimal? @db.Decimal(30, 18)
+
+  tokenAddress String?
+  tokenSymbol  String?
+
+  recipientAddress String?
+
+  status RecommendationStatus @default(PENDING)
+
+  confidence Decimal? @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([treasuryId])
+}
+
+
+model AgentMessage {
+  id String @id @default(cuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  treasuryId String?
+  treasury   Treasury? @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  role AgentMessageRole
+
+  content String
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([treasuryId])
+}
+
+
+model TreasurySnapshot {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  totalValueUsd Decimal @db.Decimal(30, 8)
+
+  bnbValueUsd  Decimal? @db.Decimal(30, 8)
+  usdtValueUsd Decimal? @db.Decimal(30, 8)
+  usdcValueUsd Decimal? @db.Decimal(30, 8)
+
+  createdAt DateTime @default(now())
+
+  @@index([treasuryId, createdAt])
+}
+
+
+model AgentAction {
+  id String @id @default(cuid())
+
+  treasuryId String
+  treasury   Treasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+
+  ruleId String?
+  rule   Rule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  type AgentActionType
+
+  payload Json
+
+  status AgentActionStatus @default(PENDING)
+
+  txHash String?
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  executedAt DateTime?
+
+  @@index([treasuryId])
+}
