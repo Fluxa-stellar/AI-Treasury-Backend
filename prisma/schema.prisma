@@ -271,6 +271,8 @@ model Approval {
   approvedAt DateTime?
   rejectedAt DateTime?
 
+  txHash String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -390,4 +392,15 @@ model AgentAction {
   executedAt DateTime?
 
   @@index([treasuryId])
+}
+
+model AuthNonce {
+  id        String   @id @default(cuid())
+  address   String
+  nonce     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([address])
 }
