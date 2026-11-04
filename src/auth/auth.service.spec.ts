@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -5,20 +6,12 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BnbService } from '../blockchain/bnb.service.js';
-import * as viem from 'viem';
-
-jest.mock('viem', () => {
-  const original = jest.requireActual('viem');
-  return {
-    ...original,
-    verifyMessage: jest.fn(),
-  };
-});
 
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: any;
   let jwtService: any;
+  let bnbService: any;
 
   const mockAddress = '0x1234567890123456789012345678901234567890';
   const mockNonce = 'abcdef1234567890abcdef1234567890';
@@ -44,6 +37,13 @@ describe('AuthService', () => {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
     };
 
+    bnbService = {
+      normalizeAddress: jest.fn((addr: string) => addr.toLowerCase()),
+      toChecksumAddress: jest.fn((addr: string) => addr),
+      isValidAddress: jest.fn(() => true),
+      verifySignature: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -59,7 +59,7 @@ describe('AuthService', () => {
             }),
           },
         },
-        BnbService,
+        { provide: BnbService, useValue: bnbService },
       ],
     }).compile();
 
@@ -96,7 +96,7 @@ describe('AuthService', () => {
         used: false,
       });
 
-      (viem.verifyMessage as jest.Mock).mockResolvedValue(true);
+      bnbService.verifySignature.mockResolvedValue(true);
 
       prisma.wallet.findUnique.mockResolvedValue({
         id: 'wallet-1',
@@ -129,7 +129,7 @@ describe('AuthService', () => {
         used: false,
       });
 
-      (viem.verifyMessage as jest.Mock).mockResolvedValue(false);
+      bnbService.verifySignature.mockResolvedValue(false);
 
       await expect(
         service.verifySignature(mockAddress, '0xinvalidsig', validMessage),
@@ -165,4 +165,3 @@ describe('AuthService', () => {
     });
   });
 });
-

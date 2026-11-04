@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getAddress, isAddress, formatUnits } from 'viem';
 import { BlockchainService } from './blockchain.service.js';
-import TREASURY_VAULT_ABI from './abis/TreasuryVault.json';
+import { TREASURY_VAULT_ABI } from './abis/treasury-vault.abi.js';
 
 export interface SpendingStatus {
   maxTransactionAmount: string;

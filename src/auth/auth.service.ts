@@ -96,10 +96,10 @@ export class AuthService {
       throw new UnauthorizedException('Nonce was not issued for this address');
     }
 
-    // 3. Verify signature cryptographically using viem
+    // 3. Verify signature cryptographically using bnbService
     let isValid = false;
     try {
-      isValid = await verifyMessage({
+      isValid = await this.bnbService.verifySignature({
         address: getAddress(address) as `0x${string}`,
         message,
         signature: signature as `0x${string}`,

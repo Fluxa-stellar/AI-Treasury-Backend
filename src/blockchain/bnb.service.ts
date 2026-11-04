@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { isAddress, getAddress } from 'viem';
+import { isAddress, getAddress, verifyMessage } from 'viem';
 
 @Injectable()
 export class BnbService {
@@ -19,6 +19,14 @@ export class BnbService {
 
   isValidAddress(address: string): boolean {
     return isAddress(address);
+  }
+
+  async verifySignature(params: {
+    address: `0x${string}`;
+    message: string;
+    signature: `0x${string}`;
+  }): Promise<boolean> {
+    return verifyMessage(params);
   }
 }
 

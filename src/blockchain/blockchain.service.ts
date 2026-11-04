@@ -10,7 +10,7 @@ import {
   parseAbiItem,
 } from 'viem';
 import { bscTestnet, bsc } from 'viem/chains';
-import BEP20_ABI from './abis/BEP20.json';
+import { BEP20_ABI } from './abis/bep20.abi.js';
 
 export interface TokenMetadata {
   address: string;
