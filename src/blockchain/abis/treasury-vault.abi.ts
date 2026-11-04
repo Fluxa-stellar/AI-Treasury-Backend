@@ -275,3 +275,4 @@ export const TREASURY_VAULT_ABI = [
 ] as const;
 
 export default TREASURY_VAULT_ABI;
+
