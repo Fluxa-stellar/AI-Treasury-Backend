@@ -12,6 +12,7 @@ async function bootstrap() {
     process.env.FRONTEND_URL || 'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
+    'https://vaultiq-web.vercel.app',
   ];
 
   app.enableCors({
@@ -45,13 +46,13 @@ async function bootstrap() {
     .setTitle('AI Treasury Agent API')
     .setDescription(
       'REST API for AI-powered Programmable Treasury Management on BNB Chain.\n\n' +
-        'Features:\n' +
-        '- Web3 Nonce & Signature Authentication\n' +
-        '- Treasury Management & On-chain Vault Integration\n' +
-        '- BNB & BEP-20 Live Balance Verification\n' +
-        '- Transaction Proposals & Approval Workflows\n' +
-        '- Rule Engine & Automated Limit Enforcement\n' +
-        '- AI Assistant with Grounded Treasury Insights & Anomaly Detection',
+      'Features:\n' +
+      '- Web3 Nonce & Signature Authentication\n' +
+      '- Treasury Management & On-chain Vault Integration\n' +
+      '- BNB & BEP-20 Live Balance Verification\n' +
+      '- Transaction Proposals & Approval Workflows\n' +
+      '- Rule Engine & Automated Limit Enforcement\n' +
+      '- AI Assistant with Grounded Treasury Insights & Anomaly Detection',
     )
     .setVersion('1.0')
     .addBearerAuth(
