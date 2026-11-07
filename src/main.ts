@@ -70,6 +70,17 @@ async function bootstrap() {
 
 ---
 
+### 📱 Real-Time Notifications & Push Alerts
+* **Telegram Bot**: Connected via [@BagflowAIBot](https://t.me/BagflowAIBot).
+* **Automated Alerts**:
+  * 🤖 **Disbursement Settled**: Instant alert when an AI agent completes a payment in \`tUSD8\` with an explorer link.
+  * 🚨 **Security Containment**: Critical ping when the smart contract blocks an over-budget or unauthorized transfer.
+  * ⚠️ **Budget Warnings**: Threshold notifications when an agent reaches 80%+ of its daily quota.
+  * 📝 **Approval Requests**: Prompts the treasury owner when high-value transfers require human review.
+* **Dual Delivery**: Every alert is dispatched to Telegram and stored as an in-app \`AgentInsight\` for the frontend notification feed.
+
+---
+
 ### 🔑 Authentication Guide
 1. **Generate Nonce**: Call \`POST /api/auth/nonce\` with your wallet address.
 2. **Sign Challenge**: Sign the issued verification message in your Web3 wallet (e.g. MetaMask).
@@ -77,7 +88,8 @@ async function bootstrap() {
 4. **Authorize**: Click the **Authorize 🔓** button below and enter: \`Bearer <your_token>\`.
 `,
     )
-    .setVersion('1.2.0')
+    .setVersion('1.3.0')
+    .setExternalDoc('Aevum Builder Challenge #1 on DoraHacks', 'https://dorahacks.io')
     .addTag('Auth', 'Web3 Nonce generation, cryptographic signature verification, and JWT session handling')
     .addTag('Treasury', 'Treasury vaults, asset tracking, live balance synchronizations, and status overviews')
     .addTag('AI Agent', 'Context-grounded AI conversational assistant, automated insights, and transaction recommendations')
@@ -88,6 +100,7 @@ async function bootstrap() {
     .addTag('Wallets', 'Wallet portfolio management, address tracking, and owner associations')
     .addTag('Users', 'User account profiles and preferences')
     .addTag('Health', 'Real-time health monitoring, Neon PostgreSQL database status, and blockchain connectivity')
+    .addTag('Notifications', 'Real-time Telegram push alerts, security containment notifications, and in-app feed')
     .addBearerAuth(
       {
         type: 'http',

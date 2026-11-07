@@ -45,7 +45,12 @@ export class HealthController {
           status: dbStatus,
         },
         blockchain: {
-          chain: 'BNB Smart Chain Testnet',
+          chain:
+            this.blockchainService.getChainId() === 44005
+              ? 'Aevum Testnet (QDay L2)'
+              : this.blockchainService.getChainId() === 56
+                ? 'BNB Smart Chain Mainnet'
+                : 'BNB Smart Chain Testnet',
           chainId: this.blockchainService.getChainId(),
           status: bnbStatus,
           latestBlock: blockNumber,

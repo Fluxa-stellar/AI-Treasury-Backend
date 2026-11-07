@@ -123,7 +123,7 @@ export class TreasuryController {
 
   @Post(':id/sync')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Sync and update live on-chain balances for all treasury assets' })
+  @ApiOperation({ summary: 'Sync and update live on-chain balances for all treasury assets (Aevum / BNB)' })
   @ApiResponse({ status: 200, description: 'Balances synced' })
   async sync(
     @Param('id') id: string,
@@ -131,7 +131,7 @@ export class TreasuryController {
   ) {
     const data = await this.treasuryService.syncTreasuryBalances(id, userId);
     return {
-      message: 'Balances synced with BNB Chain successfully',
+      message: 'Balances synced with on-chain vault successfully',
       data,
     };
   }

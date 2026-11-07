@@ -14,6 +14,8 @@ export interface AppConfig {
   aiApiKey?: string;
   aiModel: string;
   redisUrl?: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
 }
 
 export default (): AppConfig => ({
@@ -32,5 +34,7 @@ export default (): AppConfig => ({
   aiApiKey: process.env.AI_API_KEY,
   aiModel: process.env.AI_MODEL || 'qwen/qwen3.8-27b',
   redisUrl: process.env.REDIS_URL,
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
+  telegramChatId: process.env.TELEGRAM_CHAT_ID,
 });
 

@@ -14,6 +14,7 @@ import { RulesModule } from './rules/rules.module.js';
 import { AgentModule } from './agent/agent.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
 import { HealthModule } from './health/health.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -36,6 +37,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     AgentModule,
     AnalyticsModule,
     HealthModule,
+    NotificationsModule,
   ],
   providers: [
     {

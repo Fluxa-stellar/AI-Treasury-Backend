@@ -56,6 +56,22 @@ const artifactPath = path.resolve(__dirname, '../src/blockchain/abis/AevumAgentV
 const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 const AEVUM_AGENT_VAULT_ABI = artifact.abi;
 
+async function sendTelegramAlert(text) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!botToken || !chatId) return;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    });
+  } catch (e) {
+    // Ignore notification error in simulation
+  }
+}
+
 async function main() {
   console.log('===============================================================');
   console.log('   🤖 Autonomous AI Agent Treasury Payment Simulator (Aevum)    ');
@@ -134,6 +150,10 @@ async function main() {
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     console.log(`✅ Settled in Block: ${receipt.blockNumber}`);
     console.log(`🔗 Explorer: https://explorer-test.qday.info/tx/${hash}`);
+
+    await sendTelegramAlert(
+      `🤖 <b>AI Agent Disbursement Settled</b>\n━━━━━━━━━━━━━━━━━━━━\n💰 <b>Amount:</b> 2.50 tUSD8\n👤 <b>Agent:</b> <code>${agentAccount.address.slice(0, 6)}...${agentAccount.address.slice(-4)}</code>\n🎯 <b>Recipient:</b> <code>${mockRecipient.slice(0, 6)}...${mockRecipient.slice(-4)}</code>\n📝 <b>Memo:</b> <i>${purpose}</i>\n🌐 <b>Network:</b> Aevum Testnet\n🔗 <a href="https://explorer-test.qday.info/tx/${hash}">View on Explorer</a>`
+    );
   } catch (err) {
     console.error(`❌ Payment execution failed: ${err.message}`);
   }
@@ -154,6 +174,10 @@ async function main() {
   } catch (err) {
     console.log(`🛡️ Smart Contract successfully blocked over-budget payment!`);
     console.log(`• Revert Reason: Transaction limits enforced on-chain.`);
+
+    await sendTelegramAlert(
+      `🚨 <b>SECURITY CONTAINMENT TRIGGERED</b>\n━━━━━━━━━━━━━━━━━━━━\n🛡️ <b>Smart contract blocked an over-budget spend!</b>\n👤 <b>Agent:</b> <code>${agentAccount.address.slice(0, 6)}...${agentAccount.address.slice(-4)}</code>\n⚠️ <b>Attempted:</b> 5,000.00 tUSD8 (Limit: 100.00 tUSD8)\n🛑 <b>Revert:</b> Limits enforced on-chain by AevumAgentVault\n✅ <b>Status:</b> Treasury funds protected`
+    );
   }
 
   console.log('\n===============================================================');
