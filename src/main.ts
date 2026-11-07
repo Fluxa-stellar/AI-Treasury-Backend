@@ -43,25 +43,69 @@ async function bootstrap() {
 
   // 3. Swagger OpenAPI Documentation
   const config = new DocumentBuilder()
-    .setTitle('AI Treasury Agent API')
+    .setTitle('AI Treasury Agent API - Programmable Web3 Treasury')
     .setDescription(
-      'REST API for AI-powered Programmable Treasury Management on BNB Chain.\n\n' +
-      'Features:\n' +
-      '- Web3 Nonce & Signature Authentication\n' +
-      '- Treasury Management & On-chain Vault Integration\n' +
-      '- BNB & BEP-20 Live Balance Verification\n' +
-      '- Transaction Proposals & Approval Workflows\n' +
-      '- Rule Engine & Automated Limit Enforcement\n' +
-      '- AI Assistant with Grounded Treasury Insights & Anomaly Detection',
+      `### 🤖 Intelligent, Programmable Multi-Chain Treasury Platform
+
+**AI Treasury Agent** provides an autonomous, AI-driven treasury backend that monitors balances, detects spending anomalies, and executes authorized disbursements through strictly bounded smart contracts.
+
+---
+
+### 🌐 Supported Networks
+* **Aevum Testnet (QDay L2)**: 
+  * **Chain ID**: \`44005\` | **RPC**: \`https://rpc-test.qday.info\`
+  * **Primary Stablecoin**: \`tUSD8\` (\`0x456569838f1d43009A91ebA4263147Afd7233483\`, 6 decimals)
+  * **Deployed Vault**: [\`0x13487df8c92df39e8f71f86fc2da9873dbbd68aa\`](https://explorer-test.qday.info/address/0x13487df8c92df39e8f71f86fc2da9873dbbd68aa)
+  * **Core Focus**: Post-quantum security & Autonomous AI Agentic Economy.
+* **BNB Smart Chain (BSC Testnet & Mainnet)**: 
+  * **Chain ID**: \`97\` (Testnet) / \`56\` (Mainnet)
+  * **Tokens**: Native BNB & BEP-20 tokens.
+
+---
+
+### ⚙️ Core Architecture & Security Model
+1. **AI Proposes & Analyzes**: The AI agent evaluates spending requests, checks spending history, and detects anomalies.
+2. **Smart Contract Enforces Limits**: The on-chain vault (\`AevumAgentVault.sol\`) strictly enforces per-agent daily spending limits, max-transaction caps, and recipient allowlists.
+3. **Blockchain Settles**: Transactions settle securely on Aevum Testnet / BNB Chain with full on-chain auditability.
+
+---
+
+### 🔑 Authentication Guide
+1. **Generate Nonce**: Call \`POST /api/auth/nonce\` with your wallet address.
+2. **Sign Challenge**: Sign the issued verification message in your Web3 wallet (e.g. MetaMask).
+3. **Verify Signature**: Call \`POST /api/auth/verify\` with the signature to obtain a JWT bearer token.
+4. **Authorize**: Click the **Authorize 🔓** button below and enter: \`Bearer <your_token>\`.
+`,
     )
-    .setVersion('1.0')
+    .setVersion('1.2.0')
+    .addTag('Auth', 'Web3 Nonce generation, cryptographic signature verification, and JWT session handling')
+    .addTag('Treasury', 'Treasury vaults, asset tracking, live balance synchronizations, and status overviews')
+    .addTag('AI Agent', 'Context-grounded AI conversational assistant, automated insights, and transaction recommendations')
+    .addTag('Transactions', 'Disbursement proposals, execution tracking, and on-chain transaction history')
+    .addTag('Approvals', 'Human-in-the-loop multi-step approval workflows for high-value or unusual disbursements')
+    .addTag('Rules', 'Programmable treasury policies, spending limits, and automated trigger conditions')
+    .addTag('Analytics', 'Financial inflows/outflows, asset distribution charts, and historical balance snapshots')
+    .addTag('Wallets', 'Wallet portfolio management, address tracking, and owner associations')
+    .addTag('Users', 'User account profiles and preferences')
+    .addTag('Health', 'Real-time health monitoring, Neon PostgreSQL database status, and blockchain connectivity')
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter your JWT token obtained from /api/auth/verify',
+        name: 'Authorization',
+        description: 'Enter your JWT token (e.g., "Bearer eyJhbGciOi...")',
+        in: 'header',
+      },
+      'bearer',
+    )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter your JWT token (e.g., "Bearer eyJhbGciOi...")',
         in: 'header',
       },
       'JWT-auth',
@@ -70,10 +114,22 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'AI Treasury Agent API Docs',
+    customSiteTitle: 'AI Treasury Agent API Documentation',
     swaggerOptions: {
       persistAuthorization: true,
+      filter: true,
+      displayRequestDuration: true,
+      docExpansion: 'list',
+      defaultModelsExpandDepth: 1,
+      defaultModelExpandDepth: 1,
     },
+    customCss: `
+      .swagger-ui .topbar { background-color: #0d1117; border-bottom: 2px solid #30363d; }
+      .swagger-ui .topbar .topbar-wrapper .link svg { fill: #58a6ff; }
+      .swagger-ui .info .title { color: #1f6feb; }
+      .swagger-ui .btn.authorize { background-color: #238636; color: #fff; border-color: #2ea043; }
+      .swagger-ui .btn.authorize svg { fill: #fff; }
+    `,
   });
 
   const port = process.env.PORT || 4000;
