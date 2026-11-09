@@ -27,7 +27,7 @@ export class RulesEngine {
     switch (rule.type) {
       case 'LOW_BALANCE': {
         const threshold = parseFloat(condition.threshold || '0');
-        const tokenSymbol = (condition.token || 'BNB').toUpperCase();
+        const tokenSymbol = (condition.token || 'tUSD8').toUpperCase();
 
         const asset = assets.find((a) => a.symbol.toUpperCase() === tokenSymbol);
         const currentBalance = asset ? parseFloat(asset.balance.toString()) : 0;
@@ -52,8 +52,11 @@ export class RulesEngine {
 
       case 'LARGE_TRANSACTION': {
         const threshold = parseFloat(condition.threshold || '0');
+        const tokenSymbol = (condition.token || 'tUSD8').toUpperCase();
         const largeTx = recentTransactions.find(
-          (tx) => parseFloat(tx.amount.toString()) >= threshold,
+          (tx) =>
+            parseFloat(tx.amount.toString()) >= threshold &&
+            (!tx.tokenSymbol || tx.tokenSymbol.toUpperCase() === tokenSymbol),
         );
 
         if (largeTx) {
@@ -61,7 +64,7 @@ export class RulesEngine {
             ruleId: rule.id,
             ruleName: rule.name,
             triggered: true,
-            reason: `Transaction of ${largeTx.amount} ${largeTx.tokenSymbol || 'BNB'} exceeds configured threshold of ${threshold}`,
+            reason: `Transaction of ${largeTx.amount} ${largeTx.tokenSymbol || tokenSymbol} exceeds configured threshold of ${threshold}`,
             suggestedAction: {
               type: 'NOTIFY',
               payload: {
@@ -76,8 +79,8 @@ export class RulesEngine {
       }
 
       case 'EXCESS_BALANCE': {
-        const threshold = parseFloat(condition.threshold || '1000');
-        const tokenSymbol = (condition.token || 'BNB').toUpperCase();
+        const threshold = parseFloat(condition.threshold || '0.80');
+        const tokenSymbol = (condition.token || 'tUSD8').toUpperCase();
         const asset = assets.find((a) => a.symbol.toUpperCase() === tokenSymbol);
         const currentBalance = asset ? parseFloat(asset.balance.toString()) : 0;
 
@@ -98,6 +101,8 @@ export class RulesEngine {
             },
           };
         }
+        break;
+      }
         break;
       }
 

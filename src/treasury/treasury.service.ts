@@ -74,21 +74,41 @@ export class TreasuryService {
       },
     });
 
-    // Automatically add Native BNB asset
-    const bnbBalance = await this.blockchainService.getNativeBnbBalance(treasury.wallet.address);
+    // Automatically add Native asset (tQDAY on Aevum, BNB on BSC)
+    const isAevum = this.blockchainService.isAevum();
+    const nativeSymbol = this.blockchainService.getNativeSymbol();
+    const nativeName = isAevum ? 'Aevum Native Gas Token' : 'BNB Native Token';
+    const nativeBalance = await this.blockchainService.getNativeBalance(treasury.wallet.address);
 
     await this.prisma.treasuryAsset.create({
       data: {
         treasuryId: treasury.id,
         tokenAddress: '0x0000000000000000000000000000000000000000',
-        symbol: 'BNB',
-        name: 'BNB Native Token',
+        symbol: nativeSymbol,
+        name: nativeName,
         decimals: 18,
-        balance: bnbBalance.formatted,
-        priceUsd: 0, // Placeholder until oracle/coingecko configured
-        valueUsd: 0,
+        balance: nativeBalance.formatted,
+        priceUsd: isAevum ? 1.25 : 600,
+        valueUsd: parseFloat(nativeBalance.formatted || '0') * (isAevum ? 1.25 : 600),
       },
     });
+
+    if (isAevum) {
+      const tusd8Address = '0x456569838f1d43009A91ebA4263147Afd7233483'.toLowerCase();
+      const tusd8Bal = await this.blockchainService.getTokenBalance(tusd8Address, treasury.wallet.address);
+      await this.prisma.treasuryAsset.create({
+        data: {
+          treasuryId: treasury.id,
+          tokenAddress: tusd8Address,
+          symbol: 'tUSD8',
+          name: 'tUSD8 Stablecoin',
+          decimals: 6,
+          balance: tusd8Bal.balanceFormatted,
+          priceUsd: 1.0,
+          valueUsd: parseFloat(tusd8Bal.balanceFormatted || '0') * 1.0,
+        },
+      }).catch(() => null);
+    }
 
     return this.getTreasuryById(treasury.id, userId);
   }
@@ -231,10 +251,57 @@ export class TreasuryService {
 
   async getAssets(treasuryId: string, userId: string) {
     const treasury = await this.ensureOwnership(treasuryId, userId);
-    return this.prisma.treasuryAsset.findMany({
+    const isAevum = this.blockchainService.isAevum();
+
+    const assets = await this.prisma.treasuryAsset.findMany({
       where: { treasuryId },
       orderBy: { symbol: 'asc' },
     });
+
+    if (isAevum) {
+      // 1. Normalize any legacy BNB or zero-address asset to tQDAY
+      for (const asset of assets) {
+        if (asset.symbol === 'BNB' || asset.tokenAddress === '0x0000000000000000000000000000000000000000') {
+          asset.symbol = 'tQDAY';
+          asset.name = 'Aevum Native Gas Token';
+          await this.prisma.treasuryAsset.update({
+            where: { id: asset.id },
+            data: { symbol: 'tQDAY', name: 'Aevum Native Gas Token' },
+          }).catch(() => null);
+        }
+      }
+
+      // 2. Ensure primary settlement token tUSD8 is registered for this treasury
+      const tusd8Address = '0x456569838f1d43009A91ebA4263147Afd7233483'.toLowerCase();
+      const hasTusd8 = assets.some(
+        (a) => a.tokenAddress.toLowerCase() === tusd8Address || a.symbol === 'tUSD8',
+      );
+
+      if (!hasTusd8 && treasury.walletId) {
+        const wallet = await this.prisma.wallet.findUnique({ where: { id: treasury.walletId } });
+        if (wallet) {
+          const balanceInfo = await this.blockchainService.getTokenBalance(tusd8Address, wallet.address);
+          const newAsset = await this.prisma.treasuryAsset.create({
+            data: {
+              treasuryId,
+              tokenAddress: tusd8Address,
+              symbol: 'tUSD8',
+              name: 'tUSD8 Stablecoin',
+              decimals: 6,
+              balance: balanceInfo.balanceFormatted,
+              priceUsd: 1.0,
+              valueUsd: parseFloat(balanceInfo.balanceFormatted || '0') * 1.0,
+            },
+          }).catch(() => null);
+
+          if (newAsset) {
+            assets.unshift(newAsset);
+          }
+        }
+      }
+    }
+
+    return assets;
   }
 
   async addAsset(treasuryId: string, userId: string, dto: AddAssetDto) {
@@ -289,18 +356,38 @@ export class TreasuryService {
       where: { treasuryId },
     });
 
+    const isAevum = this.blockchainService.isAevum();
     const updatedAssets: any[] = [];
     for (const asset of assets) {
       try {
+        if (asset.tokenAddress === '0x0000000000000000000000000000000000000000') {
+          const native = await this.blockchainService.getNativeBalance(wallet.address);
+          const updated = await this.prisma.treasuryAsset.update({
+            where: { id: asset.id },
+            data: {
+              symbol: this.blockchainService.getNativeSymbol(),
+              name: isAevum ? 'Aevum Native Gas Token' : 'BNB Native Token',
+              balance: native.formatted,
+              priceUsd: isAevum ? 1.25 : 600,
+              valueUsd: parseFloat(native.formatted || '0') * (isAevum ? 1.25 : 600),
+            },
+          });
+          updatedAssets.push(updated);
+          continue;
+        }
+
         const live = await this.blockchainService.getTokenBalance(
           asset.tokenAddress,
           wallet.address,
         );
 
+        const isUsd8 = asset.symbol === 'tUSD8';
+        const price = isUsd8 ? 1.0 : Number(asset.priceUsd) || 1.0;
         const updated = await this.prisma.treasuryAsset.update({
           where: { id: asset.id },
           data: {
             balance: live.balanceFormatted,
+            valueUsd: parseFloat(live.balanceFormatted || '0') * price,
           },
         });
         updatedAssets.push(updated);

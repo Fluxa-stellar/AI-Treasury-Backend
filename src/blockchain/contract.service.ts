@@ -195,10 +195,10 @@ export class ContractService {
 
       if (!targetAgent || !isAddress(targetAgent)) {
         return {
-          maxTransactionAmount: '25.0',
-          dailySpendingLimit: '100.0',
+          maxTransactionAmount: '0.25',
+          dailySpendingLimit: '1.00',
           spentToday: '0.0',
-          remainingToday: '100.0',
+          remainingToday: '1.00',
         };
       }
 
