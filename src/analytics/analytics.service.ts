@@ -98,18 +98,31 @@ export class AnalyticsService {
     const treasury = await this.verifyTreasuryAccess(treasuryId, userId);
     const wallet = await this.prisma.wallet.findUnique({ where: { id: treasury.walletId } });
 
-    let bnbBalance = 0;
-    if (wallet) {
-      const bnb = await this.blockchainService.getNativeBnbBalance(wallet.address);
-      bnbBalance = parseFloat(bnb.formatted) || 0;
+    let nativeBalance = 0;
+    let stableBalance = 0;
+    const targetAddress = wallet?.address || treasury.contractAddress;
+
+    if (targetAddress) {
+      const native = await this.blockchainService.getNativeBalance(targetAddress);
+      nativeBalance = parseFloat(native.formatted) || 0;
+
+      const isAevum = this.blockchainService.isAevum();
+      if (isAevum) {
+        const tusd8Address = '0x456569838f1d43009A91ebA4263147Afd7233483';
+        const tusd8Bal = await this.blockchainService.getTokenBalance(tusd8Address, targetAddress);
+        stableBalance = parseFloat(tusd8Bal.balanceFormatted) || 0;
+      }
     }
+
+    const nativePrice = this.blockchainService.isAevum() ? 1.25 : 600;
+    const totalUsd = nativeBalance * nativePrice + stableBalance;
 
     const snapshot = await this.prisma.treasurySnapshot.create({
       data: {
         treasuryId,
-        totalValueUsd: 0,
-        bnbValueUsd: bnbBalance,
-        usdtValueUsd: 0,
+        totalValueUsd: totalUsd,
+        bnbValueUsd: nativeBalance,
+        usdtValueUsd: stableBalance,
         usdcValueUsd: 0,
       },
     });
