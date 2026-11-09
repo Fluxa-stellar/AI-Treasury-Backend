@@ -79,8 +79,15 @@ export class TreasuryController {
   }
 
   @Get(':id/overview')
-  @ApiOperation({ summary: 'Get comprehensive overview of treasury balances, limits, and activity' })
-  @ApiResponse({ status: 200, description: 'Overview retrieved' })
+  @ApiOperation({
+    summary: 'Get comprehensive overview of treasury balances, limits, and activity',
+    description:
+      'Fetches real-time on-chain balances (native tQDAY/BNB and vault tUSD8), agent spending allowance status, tracked assets, recent transaction count, pending approvals, and AI insights.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Treasury overview with live on-chain balances and agent status',
+  })
   async getOverview(
     @Param('id') id: string,
     @CurrentUser('userId') userId: string,

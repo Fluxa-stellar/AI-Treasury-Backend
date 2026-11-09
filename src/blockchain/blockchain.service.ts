@@ -7,10 +7,23 @@ import {
   formatUnits,
   isAddress,
   getAddress,
-  parseAbiItem,
+  defineChain,
+  Chain,
 } from 'viem';
 import { bscTestnet, bsc } from 'viem/chains';
 import { BEP20_ABI } from './abis/bep20.abi.js';
+
+export const aevumTestnet = defineChain({
+  id: 44005,
+  name: 'Aevum Testnet',
+  nativeCurrency: { name: 'tQDAY', symbol: 'tQDAY', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc-test.qday.info'] },
+  },
+  blockExplorers: {
+    default: { name: 'QDay Explorer', url: 'https://explorer-test.qday.info' },
+  },
+});
 
 export interface TokenMetadata {
   address: string;
@@ -33,17 +46,38 @@ export class BlockchainService implements OnModuleInit {
   private readonly logger = new Logger(BlockchainService.name);
   private client: PublicClient;
   private chainId: number;
+  private networkName: string;
+  private tusd8Address: string;
 
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
-    const rpcUrl = this.configService.get<string>(
-      'bnbRpcUrl',
-      'https://bsc-testnet-rpc.publicnode.com',
+    this.networkName = this.configService.get<string>(
+      'blockchainNetwork',
+      'aevum-testnet',
     );
-    this.chainId = this.configService.get<number>('bnbChainId', 97);
+    this.tusd8Address = this.configService
+      .get<string>('tusd8TokenAddress', '0x456569838f1d43009A91ebA4263147Afd7233483')
+      .toLowerCase();
 
-    const chain = this.chainId === 56 ? bsc : bscTestnet;
+    let chain: Chain;
+    let rpcUrl: string;
+
+    if (this.networkName === 'aevum-testnet' || this.configService.get<number>('aevumChainId') === 44005) {
+      this.chainId = this.configService.get<number>('aevumChainId', 44005);
+      rpcUrl = this.configService.get<string>(
+        'aevumRpcUrl',
+        'https://rpc-test.qday.info',
+      );
+      chain = aevumTestnet;
+    } else {
+      this.chainId = this.configService.get<number>('bnbChainId', 97);
+      rpcUrl = this.configService.get<string>(
+        'bnbRpcUrl',
+        'https://bsc-testnet-rpc.publicnode.com',
+      );
+      chain = this.chainId === 56 ? bsc : bscTestnet;
+    }
 
     this.client = createPublicClient({
       chain,
@@ -55,7 +89,7 @@ export class BlockchainService implements OnModuleInit {
     });
 
     this.logger.log(
-      `BlockchainService initialized on chain ID ${this.chainId} (${chain.name}) with RPC ${rpcUrl}`,
+      `BlockchainService initialized on network: ${this.networkName} (Chain ID: ${this.chainId}, ${chain.name}) via RPC ${rpcUrl}`,
     );
   }
 
@@ -67,7 +101,19 @@ export class BlockchainService implements OnModuleInit {
     return this.chainId;
   }
 
-  async getNativeBnbBalance(address: string): Promise<{ raw: bigint; formatted: string }> {
+  getNetworkName(): string {
+    return this.networkName;
+  }
+
+  isAevum(): boolean {
+    return this.chainId === 44005 || this.networkName === 'aevum-testnet';
+  }
+
+  getNativeSymbol(): string {
+    return this.isAevum() ? 'tQDAY' : 'BNB';
+  }
+
+  async getNativeBalance(address: string): Promise<{ raw: bigint; formatted: string; symbol: string }> {
     if (!isAddress(address)) {
       throw new Error(`Invalid address: ${address}`);
     }
@@ -79,16 +125,34 @@ export class BlockchainService implements OnModuleInit {
       return {
         raw: balance,
         formatted: formatUnits(balance, 18),
+        symbol: this.getNativeSymbol(),
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch BNB balance for ${address}:`, error);
-      return { raw: 0n, formatted: '0' };
+      this.logger.error(`Failed to fetch native balance for ${address}:`, error);
+      return { raw: 0n, formatted: '0', symbol: this.getNativeSymbol() };
     }
+  }
+
+  async getNativeBnbBalance(address: string): Promise<{ raw: bigint; formatted: string }> {
+    const res = await this.getNativeBalance(address);
+    return { raw: res.raw, formatted: res.formatted };
   }
 
   async getTokenMetadata(tokenAddress: string): Promise<TokenMetadata> {
     if (!isAddress(tokenAddress)) {
       throw new Error(`Invalid token address: ${tokenAddress}`);
+    }
+
+    const lower = tokenAddress.toLowerCase();
+
+    // Fast-path known Aevum tUSD8 stablecoin
+    if (lower === this.tusd8Address) {
+      return {
+        address: lower,
+        name: 'Test USD8',
+        symbol: 'tUSD8',
+        decimals: 6,
+      };
     }
 
     const addr = getAddress(tokenAddress) as `0x${string}`;
@@ -113,16 +177,16 @@ export class BlockchainService implements OnModuleInit {
       ]);
 
       return {
-        address: tokenAddress.toLowerCase(),
+        address: lower,
         name,
         symbol,
         decimals: Number(decimals),
       };
     } catch (error) {
-      this.logger.warn(`Could not read full BEP20 metadata for ${tokenAddress}, using defaults: ${error.message}`);
+      this.logger.warn(`Could not read ERC20/BEP20 metadata for ${tokenAddress}, using defaults: ${error.message}`);
       return {
-        address: tokenAddress.toLowerCase(),
-        name: 'Unknown Token',
+        address: lower,
+        name: 'Token',
         symbol: 'TOKEN',
         decimals: 18,
       };
@@ -137,19 +201,19 @@ export class BlockchainService implements OnModuleInit {
       throw new Error('Invalid token or account address');
     }
 
-    // Handle Native BNB token address 0x0
+    // Handle Native currency token address 0x0
     if (
       tokenAddress === '0x0000000000000000000000000000000000000000' ||
       tokenAddress.toLowerCase() === 'native'
     ) {
-      const bnb = await this.getNativeBnbBalance(accountAddress);
+      const native = await this.getNativeBalance(accountAddress);
       return {
         tokenAddress: '0x0000000000000000000000000000000000000000',
-        symbol: 'BNB',
-        name: 'BNB',
+        symbol: native.symbol,
+        name: native.symbol,
         decimals: 18,
-        balanceRaw: bnb.raw.toString(),
-        balanceFormatted: bnb.formatted,
+        balanceRaw: native.raw.toString(),
+        balanceFormatted: native.formatted,
       };
     }
 

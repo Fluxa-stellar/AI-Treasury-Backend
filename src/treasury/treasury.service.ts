@@ -157,24 +157,28 @@ export class TreasuryService {
   async getOverview(treasuryId: string, userId: string) {
     const treasury = await this.ensureOwnership(treasuryId, userId);
 
-    // Refresh on-chain native BNB balance
+    // Refresh on-chain native balance (tQDAY on Aevum, BNB on BSC)
     const walletAddress = (
       await this.prisma.wallet.findUnique({ where: { id: treasury.walletId } })
     )?.address;
 
-    let nativeBnbBalance = '0';
+    let nativeBalanceFormatted = '0';
     if (walletAddress) {
-      const bnb = await this.blockchainService.getNativeBnbBalance(walletAddress);
-      nativeBnbBalance = bnb.formatted;
+      const native = await this.blockchainService.getNativeBalance(walletAddress);
+      nativeBalanceFormatted = native.formatted;
     }
+
+    const isAevum = this.blockchainService.isAevum();
+    const nativeSymbol = this.blockchainService.getNativeSymbol();
+    const vaultTokenSymbol = isAevum ? 'tUSD8' : 'BNB';
 
     // Check smart contract balance & spending status if vault is configured
     let vaultSpendingStatus: any = null;
-    let vaultBnbBalance = '0';
+    let vaultBalanceFormatted = '0';
     if (treasury.contractAddress) {
       vaultSpendingStatus = await this.contractService.getSpendingStatus(treasury.contractAddress);
-      vaultBnbBalance = await this.contractService.getVaultBalance(
-        '0x0000000000000000000000000000000000000000',
+      vaultBalanceFormatted = await this.contractService.getVaultBalance(
+        isAevum ? undefined : '0x0000000000000000000000000000000000000000',
         treasury.contractAddress,
       );
     }
@@ -206,9 +210,15 @@ export class TreasuryService {
       name: treasury.name,
       contractAddress: treasury.contractAddress,
       chainId: treasury.chainId,
+      network: this.blockchainService.getNetworkName(),
       walletAddress,
-      nativeBnbBalance,
-      vaultBnbBalance,
+      nativeBalance: nativeBalanceFormatted,
+      nativeSymbol,
+      vaultBalance: vaultBalanceFormatted,
+      vaultTokenSymbol,
+      // Backwards-compatible aliases for frontend:
+      nativeBnbBalance: nativeBalanceFormatted,
+      vaultBnbBalance: vaultBalanceFormatted,
       vaultSpendingStatus,
       totalAssetsCount: assets.length,
       assets,

@@ -71,7 +71,7 @@ async function bootstrap() {
 ---
 
 ### 📱 Real-Time Notifications & Push Alerts
-* **Telegram Bot**: Connected via [@BagflowAIBot](https://t.me/BagflowAIBot).
+* **Telegram Bot**: Connected via [@VaultAI1bot](https://t.me/VaultAI1bot).
 * **Automated Alerts**:
   * 🤖 **Disbursement Settled**: Instant alert when an AI agent completes a payment in \`tUSD8\` with an explorer link.
   * 🚨 **Security Containment**: Critical ping when the smart contract blocks an over-budget or unauthorized transfer.
@@ -88,8 +88,10 @@ async function bootstrap() {
 4. **Authorize**: Click the **Authorize 🔓** button below and enter: \`Bearer <your_token>\`.
 `,
     )
-    .setVersion('1.3.0')
+    .setVersion('1.4.0')
     .setExternalDoc('Aevum Builder Challenge #1 on DoraHacks', 'https://dorahacks.io')
+    .addServer('http://localhost:3750', 'Local Development Server')
+    .addServer('https://ai-treasury-backend.onrender.com', 'Render Cloud Server')
     .addTag('Auth', 'Web3 Nonce generation, cryptographic signature verification, and JWT session handling')
     .addTag('Treasury', 'Treasury vaults, asset tracking, live balance synchronizations, and status overviews')
     .addTag('AI Agent', 'Context-grounded AI conversational assistant, automated insights, and transaction recommendations')

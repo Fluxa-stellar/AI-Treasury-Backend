@@ -14,8 +14,12 @@ export class HealthController {
 
   @Public()
   @Get(['health', 'api/health'])
-  @ApiOperation({ summary: 'System health check, Neon DB and BNB Chain status' })
-  @ApiResponse({ status: 200, description: 'Health status' })
+  @ApiOperation({
+    summary: 'System health check, Neon DB and Blockchain connectivity status',
+    description:
+      'Verifies connectivity to Neon PostgreSQL database and the active blockchain network (Aevum Testnet / BSC) with real-time block height.',
+  })
+  @ApiResponse({ status: 200, description: 'Health status and live block details' })
   async checkHealth() {
     let dbStatus = 'disconnected';
     try {
