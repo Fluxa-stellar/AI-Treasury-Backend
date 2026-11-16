@@ -1,7 +1,7 @@
 
 # 🤖 AI Treasury Agent
 
-> **An AI-powered programmable treasury that monitors blockchain activity, detects risks, recommends actions, and executes authorized transactions through a secure smart contract on BNB Chain.**
+> **An AI-powered programmable treasury that monitors blockchain activity, detects risks, recommends actions, and executes authorized transactions through a secure smart contract on Aeveum Chain.**
 
 ## 🚀 Overview
 
@@ -63,7 +63,7 @@ Giving an AI agent a private key or unlimited spending permission creates a majo
 
 AI Treasury Agent combines:
 
-**AI + Smart Contracts + BNB Chain**
+**AI + Smart Contracts + Aeveum Chain**
 
 to create a programmable treasury.
 
@@ -123,7 +123,7 @@ It enforces:
           │          │          │
           └──────────┼──────────┘
                      ▼
-                 BNB Chain
+                 Aeveum Chain
                      │
                      ▼
                Transaction
@@ -187,7 +187,7 @@ This means the smart contract remains the final security layer.
 
 ## 1. Wallet Connection
 
-Users connect a BNB-compatible wallet to access their treasury.
+Users connect a Aeveum-compatible wallet to access their treasury.
 
 The application displays:
 
@@ -507,7 +507,7 @@ The transaction executes.
        │
        ▼
 ┌──────────────────────────────────────┐
-│          BNB Smart Chain             │
+│          Aeveum Smart Chain             │
 │                                      │
 │        TreasuryVault.sol             │
 └──────────────────────────────────────┘
@@ -541,7 +541,7 @@ The transaction executes.
 
 ## Blockchain
 
-- BNB Smart Chain
+- Aeveum Chain
 - Solidity
 - OpenZeppelin
 - viem
@@ -675,7 +675,7 @@ ai-treasury-agent/
           ↓
 9. Treasury contract validates request
           ↓
-10. BNB Chain executes transaction
+10. Aeveum Chain executes transaction
           ↓
 11. Transaction is recorded
           ↓
@@ -728,7 +728,7 @@ ai-treasury-agent/
 
 ---
 
-# 🏆 Why BNB Chain?
+# 🏆 Why Aeveum Chain?
 
 BNB Chain provides the on-chain execution layer for the treasury.
 
