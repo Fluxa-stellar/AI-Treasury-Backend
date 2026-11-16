@@ -186,7 +186,7 @@ export class ApprovalsService {
             chainId: treasury.chainId,
             type: (approval.actionType as any) || 'TRANSFER',
             tokenAddress: approval.tokenAddress || '0x0000000000000000000000000000000000000000',
-            tokenSymbol: approval.tokenSymbol || 'BNB',
+            tokenSymbol: approval.tokenSymbol || 'tUSD8',
             amount: approval.amount || 0,
             fromAddress: wallet ? wallet.address : '0x0000000000000000000000000000000000000000',
             toAddress: approval.recipientAddress || '0x0000000000000000000000000000000000000000',
